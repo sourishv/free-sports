@@ -48,7 +48,14 @@ With no configuration the app runs in **Demo Mode**. Everything is stored in the
 4. **Project settings (⚙️) → Your apps → Web (`</>`)**: register an app and copy the `firebaseConfig` values.
 5. Paste them into `src/config.ts` (`PASTED_CONFIG`), or into `.env.local` using [`.env.example`](.env.example). The web config isn't secret, so it's safe to commit. Security comes from the rules.
 
-## Free hosting: GitHub Pages
+## Free hosting: Vercel (works with private repos, can be done from a phone)
+
+1. Go to <https://vercel.com> → **Sign up with GitHub** (Hobby plan, free, no card).
+2. **Add New… → Project** → give Vercel access to this repo → **Import**. Vite is detected automatically (build `npm run build`, output `dist`). Click **Deploy**.
+3. You get a URL like `https://free-sports-xxxx.vercel.app`. Every push redeploys automatically.
+4. Once you have Firebase: **Project → Settings → Environment Variables** → add the six `VITE_FIREBASE_*` values → **Deployments → Redeploy**. If you use Google sign-in, add the `vercel.app` domain under Firebase **Authentication → Settings → Authorized domains**.
+
+## Alternative: GitHub Pages (public repos only on the free GitHub plan)
 
 1. Repo **Settings → Pages → Source: GitHub Actions**.
 2. If you used env vars instead of `config.ts`: **Settings → Secrets and variables → Actions → Variables** → add the six `VITE_FIREBASE_*` values.
