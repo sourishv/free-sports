@@ -1,0 +1,58 @@
+rules_version = '2';
+// Security rules for FreeSports (Firebase Spark / free plan).
+// Deploy: Firebase console → Firestore Database → Rules → paste this → Publish.
+//
+// Design: nobody ever writes to someone else's coin balance. Players pay their own buy-ins,
+// and after a duel settles each player's own app "collects" their payout. It's play money among
+// friends — a determined friend with dev tools could still fiddle with their *own* balance.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && uid == me()
+        && request.resource.data.coins == 1000
+        && request.resource.data.achievements.size() == 0;
+      // You can edit yourself…
+      allow update: if signedIn() && (uid == me()
+        // …or add yourself to someone's friends list (mutual friendship), touching nothing else.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friends'])
+            && request.resource.data.friends.hasAll(resource.data.friends)
+            && request.resource.data.friends.size() == resource.data.friends.size() + 1
+            && me() in request.resource.data.friends));
+      allow delete: if false;
+    }
+
+    match /duels/{duelId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.hostUid == me()
+        && request.resource.data.participantIds == [me()];
+      // participants (and people joining) can update; settlement is idempotent in the app
+      allow update: if signedIn()
+        && (me() in resource.data.participantIds || me() in request.resource.data.participantIds)
+        && request.resource.data.hostUid == resource.data.hostUid
+        && request.resource.data.buyIn == resource.data.buyIn
+        && request.resource.data.code == resource.data.code;
+      allow delete: if false;
+
+      match /messages/{msgId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && (request.resource.data.uid == me() || request.resource.data.uid == 'system')
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 300;
+        allow update, delete: if false;
+      }
+    }
+
+    match /bets/{betId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == me();
+      allow update: if signedIn() && resource.data.uid == me() && request.resource.data.uid == me();
+      allow delete: if false;
+    }
+  }
+}
