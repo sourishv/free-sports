@@ -7,7 +7,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # main, plus this repo's current default branch
+    branches: [main, claude/zen-dijkstra-4qc78c]
   workflow_dispatch:
 
 permissions:
